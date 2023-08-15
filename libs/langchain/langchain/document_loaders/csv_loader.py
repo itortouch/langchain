@@ -34,6 +34,7 @@ class CSVLoader(BaseLoader):
         self,
         file_path: str,
         source_column: Optional[str] = None,
+        metadata_columns_dtypes: Optional[Dict[str, str]] = None,
         csv_args: Optional[Dict] = None,
         encoding: Optional[str] = None,
     ):
@@ -43,12 +44,15 @@ class CSVLoader(BaseLoader):
             file_path: The path to the CSV file.
             source_column: The name of the column in the CSV file to use as the source.
               Optional. Defaults to None.
+            metadata_columns_dtypes: Name of column as keys and data type as values.
+              Optional. Defaults to None.
             csv_args: A dictionary of arguments to pass to the csv.DictReader.
               Optional. Defaults to None.
             encoding: The encoding of the CSV file. Optional. Defaults to None.
         """
         self.file_path = file_path
         self.source_column = source_column
+        self.metadata_columns_dtypes = metadata_columns_dtypes
         self.encoding = encoding
         self.csv_args = csv_args or {}
 
@@ -71,6 +75,12 @@ class CSVLoader(BaseLoader):
                         f"Source column '{self.source_column}' not found in CSV file."
                     )
                 metadata = {"source": source, "row": i}
+                if self.metadata_columns_dtypes:
+                    for k, v in row.items():
+                        if k in self.metadata_columns_dtypes.keys():
+                            if self.metadata_columns_dtypes[k] in ["int", "float"]:
+                                v = eval(v)
+                            metadata.update({k: v})
                 doc = Document(page_content=content, metadata=metadata)
                 docs.append(doc)
 
